@@ -1,4 +1,4 @@
-const CACHE_NAME = "minhas-tarefas-v4";
+const CACHE_NAME = "minhas-tarefas-v5";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
@@ -47,4 +47,15 @@ self.addEventListener("fetch", (event) => {
         return Response.error();
       })
   );
+});
+
+// Abre/focaliza o aplicativo quando o usuário toca em uma notificação.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const janelas = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    const existente = janelas.find(janela => janela.url.startsWith(self.registration.scope));
+    if (existente) return existente.focus();
+    return clients.openWindow(self.registration.scope);
+  })());
 });
