@@ -7,43 +7,88 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="icon" type="image/png" href="./icon-192.png">
-  <title>Minhas Tarefas — Versão 2</title>
+  <title>Minhas Tarefas — Versão 3</title>
   <style>
-    :root { color-scheme: light; }
+    /* PASSO 1: cores da aparência clara. */
+    :root {
+      color-scheme: light;
+      --fundo: #eff6ff;
+      --cartao: #ffffff;
+      --texto: #1e293b;
+      --suave: #64748b;
+      --contador: #475569;
+      --borda: #cbd5e1;
+      --campo: #ffffff;
+      --tarefa: #f1f5f9;
+      --filtro: #e2e8f0;
+      --filtro-hover: #cbd5e1;
+      --filtro-texto: #334155;
+      --barra: #e2e8f0;
+      --etiqueta-fundo: #fee2e2;
+      --etiqueta-texto: #991b1b;
+      --rodape: #94a3b8;
+      --sombra: #1e3a8a14;
+    }
+
+    /* PASSO 2: substitua os valores das cores quando o tema for escuro. */
+    html[data-tema="escuro"] {
+      color-scheme: dark;
+      --fundo: #0b1120;
+      --cartao: #172033;
+      --texto: #f8fafc;
+      --suave: #cbd5e1;
+      --contador: #cbd5e1;
+      --borda: #64748b;
+      --campo: #1e293b;
+      --tarefa: #243247;
+      --filtro: #334155;
+      --filtro-hover: #475569;
+      --filtro-texto: #f1f5f9;
+      --barra: #334155;
+      --etiqueta-fundo: #7f1d1d;
+      --etiqueta-texto: #fee2e2;
+      --rodape: #cbd5e1;
+      --sombra: #02061770;
+    }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: #eff6ff;
-      color: #1e293b;
+      background: var(--fundo);
+      color: var(--texto);
       font-family: Arial, Helvetica, sans-serif;
       padding: max(24px, env(safe-area-inset-top)) 14px max(28px, env(safe-area-inset-bottom));
     }
     .aplicativo {
       max-width: 540px;
       margin: 0 auto;
-      background: #fff;
+      background: var(--cartao);
       padding: 24px;
       border-radius: 18px;
-      box-shadow: 0 8px 28px #1e3a8a14;
+      box-shadow: 0 8px 28px var(--sombra);
     }
-    h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2rem); text-align: center; }
-    .subtitulo { color: #64748b; text-align: center; margin: 10px 0 24px; }
+    .topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h1 { margin: 0; font-size: clamp(1.5rem, 5vw, 2rem); }
+    .subtitulo { color: var(--suave); text-align: center; margin: 12px 0 24px; }
     .formulario { display: flex; gap: 8px; flex-wrap: wrap; }
     .formulario input {
       flex: 1 1 190px;
       min-width: 0;
       padding: 12px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--borda);
       border-radius: 10px;
       font-size: 16px;
+      background: var(--campo);
+      color: var(--texto);
     }
+    .formulario input::placeholder { color: var(--suave); }
     select {
       padding: 11px 9px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--borda);
       border-radius: 10px;
-      background: #fff;
-      color: #1e293b;
+      background: var(--campo);
+      color: var(--texto);
       font-size: 15px;
     }
     button {
@@ -61,14 +106,22 @@
       outline: 3px solid #93c5fd;
       outline-offset: 2px;
     }
+    .botao-tema {
+      background: var(--filtro);
+      color: var(--filtro-texto);
+      flex-shrink: 0;
+      font-size: 13px;
+      padding: 9px 10px;
+    }
+    .botao-tema:hover { background: var(--filtro-hover); }
     .painel { margin: 24px 0 14px; }
     .linha-contador { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-    #contador { color: #475569; font-size: 14px; }
-    .barra { margin-top: 10px; height: 10px; overflow: hidden; border-radius: 99px; background: #e2e8f0; }
+    #contador { color: var(--contador); font-size: 14px; }
+    .barra { margin-top: 10px; height: 10px; overflow: hidden; border-radius: 99px; background: var(--barra); }
     #progresso { width: 0%; height: 100%; background: #16a34a; border-radius: 99px; transition: width .2s ease; }
     .filtros { display: flex; gap: 6px; margin: 20px 0 12px; }
-    .filtro { flex: 1; background: #e2e8f0; color: #334155; padding: 10px 5px; font-size: 13px; }
-    .filtro:hover { background: #cbd5e1; }
+    .filtro { flex: 1; background: var(--filtro); color: var(--filtro-texto); padding: 10px 5px; font-size: 13px; }
+    .filtro:hover { background: var(--filtro-hover); }
     .filtro.ativo { background: #2563eb; color: #fff; }
     #lista { list-style: none; margin: 0; padding: 0; }
     #lista li {
@@ -78,16 +131,20 @@
       padding: 11px;
       margin: 8px 0;
       border-radius: 11px;
-      background: #f1f5f9;
+      background: var(--tarefa);
     }
     #lista label { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
     #lista input[type="checkbox"] { width: 21px; height: 21px; accent-color: #2563eb; flex-shrink: 0; }
-    .concluida { color: #64748b; text-decoration: line-through; }
-    .prioridade { flex-shrink: 0; border-radius: 99px; font-size: 11px; background: #fee2e2; color: #991b1b; padding: 5px 7px; }
+    .concluida { color: var(--suave); text-decoration: line-through; }
+    .prioridade { flex-shrink: 0; border-radius: 99px; font-size: 11px; background: var(--etiqueta-fundo); color: var(--etiqueta-texto); padding: 5px 7px; }
     .excluir { background: #dc3545; flex-shrink: 0; font-size: 13px; padding: 10px; }
     .excluir:hover { background: #b91c1c; }
-    #vazio { color: #64748b; text-align: center; padding: 24px 5px; font-size: 14px; }
-    .rodape { color: #94a3b8; font-size: 12px; text-align: center; margin-top: 18px; }
+    #vazio { color: var(--suave); text-align: center; padding: 24px 5px; font-size: 14px; }
+    .rodape { color: var(--rodape); font-size: 12px; text-align: center; margin-top: 18px; }
+    @media (max-width: 440px) {
+      .topo { flex-direction: column; }
+      h1 { text-align: center; }
+    }
     @media (max-width: 390px) {
       .aplicativo { padding: 18px 14px; }
       .formulario button { flex: 1 1 100%; }
@@ -95,12 +152,18 @@
       .filtro { font-size: 12px; }
       #lista li { gap: 6px; }
     }
+    @media (prefers-reduced-motion: reduce) {
+      #progresso { transition: none; }
+    }
   </style>
 </head>
 <body>
   <main class="aplicativo">
-    <h1>📝 Minhas Tarefas</h1>
-    <p class="subtitulo">Organize seu dia — versão 2!</p>
+    <div class="topo">
+      <h1>📝 Minhas Tarefas</h1>
+      <button id="alternarTema" class="botao-tema" type="button" aria-pressed="false">🌙 Modo escuro</button>
+    </div>
+    <p class="subtitulo">Organize seu dia — versão 3!</p>
 
     <form id="formulario" class="formulario">
       <input id="novaTarefa" type="text" maxlength="100" placeholder="Digite uma tarefa..." aria-label="Nova tarefa" required>
@@ -149,6 +212,31 @@
     } catch (erro) {
       console.warn("Não foi possível ler tarefas salvas.", erro);
     }
+
+    // PASSO 3: lê a escolha de tema sem alterar as tarefas salvas.
+    const botaoTema = document.getElementById("alternarTema");
+    const metaTema = document.querySelector('meta[name="theme-color"]');
+    let temaAtual = localStorage.getItem("temaTarefas");
+
+    if (temaAtual !== "claro" && temaAtual !== "escuro") {
+      temaAtual = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "escuro" : "claro";
+    }
+
+    function aplicarTema() {
+      const escuro = temaAtual === "escuro";
+      document.documentElement.dataset.tema = temaAtual;
+      botaoTema.textContent = escuro ? "☀️ Modo claro" : "🌙 Modo escuro";
+      botaoTema.setAttribute("aria-pressed", String(escuro));
+      metaTema.setAttribute("content", escuro ? "#0b1120" : "#2563eb");
+    }
+
+    botaoTema.addEventListener("click", () => {
+      temaAtual = temaAtual === "escuro" ? "claro" : "escuro";
+      localStorage.setItem("temaTarefas", temaAtual);
+      aplicarTema();
+    });
+    aplicarTema();
 
     let filtroAtual = "todas";
     const formulario = document.getElementById("formulario");
