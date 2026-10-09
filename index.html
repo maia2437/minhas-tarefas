@@ -7,7 +7,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="icon" type="image/png" href="./icon-192.png">
-  <title>Minhas Tarefas — Versão 4</title>
+  <title>Minhas Tarefas — Versão 5</title>
   <style>
     /* PASSO 1: cores da aparência clara. */
     :root {
@@ -95,13 +95,14 @@
       color: var(--texto);
     }
     .formulario input::placeholder { color: var(--suave); }
-    .formulario label[for="dataLimite"] {
+    .formulario label[for="dataLimite"],
+    .formulario label[for="lembreteEm"] {
       flex: 1 1 100%;
       color: var(--suave);
       font-size: 13px;
       margin-top: 3px;
     }
-    .formulario input[type="date"] { flex: 1 1 165px; min-width: 0; }
+    .formulario input[type="date"], .formulario input[type="datetime-local"] { flex: 1 1 165px; min-width: 0; }
     .formulario button[type="submit"] { flex: 1 1 120px; }
     select {
       padding: 11px 9px;
@@ -170,6 +171,16 @@
       background: var(--prazo-atrasado-fundo); color: var(--prazo-atrasado-texto);
     }
     #resumoPrazos { color: var(--contador); font-size: 13px; margin: 10px 0 0; }
+    .notificacoes-config { border: 1px solid var(--borda); border-radius: 12px; margin-top: 14px; padding: 12px; }
+    .notificacoes-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .notificacoes-botoes button { flex: 1 1 160px; }
+    .notificacoes-botoes .secundario { background: var(--filtro); color: var(--filtro-texto); }
+    .notificacoes-botoes .secundario:hover { background: var(--filtro-hover); }
+    .notificacoes-botoes button:disabled { opacity: .6; cursor: not-allowed; }
+    #statusNotificacoes { color: var(--contador); font-size: 13px; line-height: 1.5; margin: 9px 0 0; }
+    #avisoLembretes { background: var(--prazo-hoje-fundo); color: var(--prazo-hoje-texto); border-radius: 10px; padding: 11px; font-size: 14px; line-height: 1.5; }
+    .lembrete-etiqueta { border-radius: 99px; font-size: 11px; padding: 5px 7px; background: var(--filtro); color: var(--filtro-texto); }
+    .lembrete-etiqueta.vencido { background: var(--prazo-hoje-fundo); color: var(--prazo-hoje-texto); }
     .prioridade { flex-shrink: 0; border-radius: 99px; font-size: 11px; background: var(--etiqueta-fundo); color: var(--etiqueta-texto); padding: 5px 7px; }
     .excluir { background: #dc3545; flex-shrink: 0; font-size: 13px; padding: 10px; }
     .excluir:hover { background: #b91c1c; }
@@ -197,7 +208,7 @@
       <h1>📝 Minhas Tarefas</h1>
       <button id="alternarTema" class="botao-tema" type="button" aria-pressed="false">🌙 Modo escuro</button>
     </div>
-    <p class="subtitulo">Organize seu dia — versão 4, com prazos!</p>
+    <p class="subtitulo">Organize seu dia — versão 5, com lembretes!</p>
 
     <form id="formulario" class="formulario">
       <input id="novaTarefa" type="text" maxlength="100" placeholder="Digite uma tarefa..." aria-label="Nova tarefa" required>
@@ -207,8 +218,19 @@
       </select>
       <label for="dataLimite">Prazo (opcional)</label>
       <input id="dataLimite" type="date" aria-label="Data limite da tarefa">
+      <label for="lembreteEm">Lembrete (data e hora, opcional)</label>
+      <input id="lembreteEm" type="datetime-local" aria-label="Data e hora do lembrete">
       <button type="submit">Adicionar</button>
     </form>
+
+    <section class="notificacoes-config" aria-label="Configurações dos lembretes">
+      <div class="notificacoes-botoes">
+        <button id="ativarNotificacoes" type="button">🔔 Ativar notificações</button>
+        <button id="testarNotificacao" class="secundario" type="button">Testar notificação</button>
+      </div>
+      <p id="statusNotificacoes" role="status">Verificando disponibilidade de notificações...</p>
+    </section>
+    <p id="avisoLembretes" role="status" aria-live="polite" hidden></p>
 
     <section class="painel" aria-label="Progresso">
       <div class="linha-contador">
@@ -252,6 +274,25 @@
         data.getMonth() + 1 === mes && data.getDate() === dia;
     }
 
+    // "2026-10-15T19:30" é um horário local, sem indicação de fuso.
+    function dataHoraValida(valor) {
+      if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(valor)) return false;
+      const [data, horario] = valor.split("T");
+      const [hora, minuto] = horario.split(":").map(Number);
+      return dataValida(data) && hora >= 0 && hora <= 23 && minuto >= 0 && minuto <= 59;
+    }
+
+    function horarioLocal(valor) {
+      const [data, horario] = valor.split("T");
+      const [ano, mes, dia] = data.split("-").map(Number);
+      const [hora, minuto] = horario.split(":").map(Number);
+      return new Date(ano, mes - 1, dia, hora, minuto);
+    }
+
+    function formatarDataHora(valor) {
+      return formatarData(valor.slice(0, 10)) + " às " + valor.slice(11, 16);
+    }
+
     function formatarData(valor) {
       const [ano, mes, dia] = valor.split("-");
       return `${dia}/${mes}/${ano}`;
@@ -278,7 +319,9 @@
             texto: t.texto,
             concluida: t.concluida === true,
             prioridade: t.prioridade === "alta" ? "alta" : "normal",
-            dataLimite: dataValida(t.dataLimite) ? t.dataLimite : null
+            dataLimite: dataValida(t.dataLimite) ? t.dataLimite : null,
+            lembreteEm: dataHoraValida(t.lembreteEm) ? t.lembreteEm : null,
+            lembreteEnviado: t.lembreteEnviado === true
           }));
       }
     } catch (erro) {
@@ -315,6 +358,11 @@
     const campo = document.getElementById("novaTarefa");
     const prioridade = document.getElementById("prioridade");
     const prazo = document.getElementById("dataLimite");
+    const campoLembrete = document.getElementById("lembreteEm");
+    const botaoPermissao = document.getElementById("ativarNotificacoes");
+    const botaoTeste = document.getElementById("testarNotificacao");
+    const statusNotificacoes = document.getElementById("statusNotificacoes");
+    const avisoLembretes = document.getElementById("avisoLembretes");
     const resumoPrazos = document.getElementById("resumoPrazos");
     const lista = document.getElementById("lista");
     const contador = document.getElementById("contador");
@@ -336,12 +384,26 @@
         alert("Escolha uma data válida.");
         return;
       }
-      tarefas.push({ texto: texto, concluida: false, prioridade: prioridade.value, dataLimite });
+      const lembreteEm = campoLembrete.value || null;
+      if (lembreteEm && !dataHoraValida(lembreteEm)) {
+        alert("Escolha uma data e hora válidas para o lembrete.");
+        return;
+      }
+      if (lembreteEm && horarioLocal(lembreteEm).getTime() <= Date.now()) {
+        alert("Escolha um horário futuro para o lembrete.");
+        return;
+      }
+      tarefas.push({
+        texto, concluida: false, prioridade: prioridade.value, dataLimite,
+        lembreteEm, lembreteEnviado: false
+      });
       salvarTarefas();
       campo.value = "";
       prioridade.value = "normal";
       prazo.value = "";
+      campoLembrete.value = "";
       mostrarTarefas();
+      verificarLembretes();
       campo.focus();
     }
 
@@ -406,6 +468,13 @@
           badgePrazo.textContent = situacao.texto;
           etiquetas.appendChild(badgePrazo);
         }
+        if (tarefa.lembreteEm) {
+          const etiquetaLembrete = document.createElement("span");
+          const vencido = !tarefa.concluida && horarioLocal(tarefa.lembreteEm).getTime() <= Date.now();
+          etiquetaLembrete.className = "lembrete-etiqueta" + (vencido ? " vencido" : "");
+          etiquetaLembrete.textContent = (vencido ? "⏰ Lembrete vencido: " : "🔔 Lembrar: ") + formatarDataHora(tarefa.lembreteEm);
+          etiquetas.appendChild(etiquetaLembrete);
+        }
         if (etiquetas.childElementCount) info.appendChild(etiquetas);
         item.appendChild(info);
 
@@ -443,13 +512,104 @@
       }
     }
 
+    // PASSO 4: notificações do Android com permissão explícita.
+    function notificacoesDisponiveis() {
+      return window.isSecureContext && "Notification" in window && "serviceWorker" in navigator;
+    }
+
+    function atualizarStatusNotificacoes() {
+      if (!notificacoesDisponiveis()) {
+        statusNotificacoes.textContent = "Notificações do sistema exigem HTTPS e um navegador compatível. Os avisos dentro do app continuam disponíveis.";
+        botaoPermissao.disabled = true;
+        botaoTeste.disabled = true;
+      } else if (Notification.permission === "granted") {
+        statusNotificacoes.textContent = "Notificações permitidas. Os lembretes aparecem enquanto o app estiver aberto.";
+        botaoPermissao.disabled = true;
+        botaoPermissao.textContent = "✓ Notificações ativadas";
+        botaoTeste.disabled = false;
+      } else if (Notification.permission === "denied") {
+        statusNotificacoes.textContent = "Notificações bloqueadas. Confira as permissões deste site/app nas configurações do Android ou Chrome.";
+        botaoPermissao.disabled = true;
+        botaoTeste.disabled = true;
+      } else {
+        statusNotificacoes.textContent = "Toque em Ativar notificações para permitir avisos do Android. Sem permissão, você verá avisos dentro do aplicativo.";
+        botaoTeste.disabled = true;
+      }
+    }
+
+    // Só pedimos permissão depois de um toque do usuário.
+    botaoPermissao.addEventListener("click", async () => {
+      if (!notificacoesDisponiveis()) return;
+      try {
+        const resposta = await Notification.requestPermission();
+        atualizarStatusNotificacoes();
+        if (resposta === "granted") {
+          statusNotificacoes.textContent = "Permissão concedida! Toque em Testar notificação.";
+        }
+      } catch (erro) {
+        statusNotificacoes.textContent = "Não foi possível solicitar a permissão: " + erro.message;
+      }
+    });
+
+    async function mostrarNotificacao(titulo, mensagem, identificador) {
+      if (!notificacoesDisponiveis() || Notification.permission !== "granted") return false;
+      try {
+        const registro = await navigator.serviceWorker.ready;
+        await registro.showNotification(titulo, {
+          body: mensagem,
+          icon: "./icon-192.png",
+          badge: "./icon-192.png",
+          tag: identificador
+        });
+        return true;
+      } catch (erro) {
+        console.warn("Não foi possível mostrar notificação:", erro);
+        return false;
+      }
+    }
+
+    botaoTeste.addEventListener("click", async () => {
+      const ok = await mostrarNotificacao("🔔 Teste do aplicativo", "As notificações estão funcionando!", "teste-tarefas");
+      statusNotificacoes.textContent = ok
+        ? "Notificação de teste enviada. Confira os avisos do Android."
+        : "Falha no teste. Verifique as permissões e a conexão segura.";
+    });
+
+    // PASSO 5: confere lembretes enquanto o aplicativo está aberto.
+    async function verificarLembretes() {
+      const agora = Date.now();
+      const vencendo = tarefas.filter(tarefa =>
+        !tarefa.concluida && tarefa.lembreteEm && !tarefa.lembreteEnviado &&
+        horarioLocal(tarefa.lembreteEm).getTime() <= agora
+      );
+      if (!vencendo.length) return;
+
+      vencendo.forEach(tarefa => { tarefa.lembreteEnviado = true; });
+      salvarTarefas();
+      mostrarTarefas();
+
+      const nomes = vencendo.map(t => t.texto);
+      avisoLembretes.hidden = false;
+      avisoLembretes.textContent = "⏰ Lembrete: " + nomes.join(" • ");
+      const mensagem = vencendo.length === 1 ? nomes[0] :
+        vencendo.length + " tarefas estão no horário do lembrete.";
+      await mostrarNotificacao("⏰ Hora da tarefa!", mensagem, "lembretes-tarefas");
+    }
+
     formulario.addEventListener("submit", adicionarTarefa);
     botoesFiltro.forEach(botao => {
       botao.addEventListener("click", () => mudarFiltro(botao.dataset.filtro));
     });
     mostrarTarefas();
+    atualizarStatusNotificacoes();
+    verificarLembretes();
+    setInterval(verificarLembretes, 15000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) { mostrarTarefas(); verificarLembretes(); }
+    });
+    window.addEventListener("focus", () => { mostrarTarefas(); verificarLembretes(); });
 
-    // 4. Continua funcionando como aplicativo instalável/offline na versão 4.
+    // Continua funcionando como aplicativo instalável/offline na versão 5.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js")
