@@ -7,7 +7,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="icon" type="image/png" href="./icon-192.png">
-  <title>Minhas Tarefas — Versão 3</title>
+  <title>Minhas Tarefas — Versão 4</title>
   <style>
     /* PASSO 1: cores da aparência clara. */
     :root {
@@ -28,6 +28,12 @@
       --etiqueta-texto: #991b1b;
       --rodape: #94a3b8;
       --sombra: #1e3a8a14;
+      --prazo-futuro-fundo: #dbeafe;
+      --prazo-futuro-texto: #1e40af;
+      --prazo-hoje-fundo: #fef3c7;
+      --prazo-hoje-texto: #92400e;
+      --prazo-atrasado-fundo: #fee2e2;
+      --prazo-atrasado-texto: #991b1b;
     }
 
     /* PASSO 2: substitua os valores das cores quando o tema for escuro. */
@@ -49,6 +55,12 @@
       --etiqueta-texto: #fee2e2;
       --rodape: #cbd5e1;
       --sombra: #02061770;
+      --prazo-futuro-fundo: #1e3a8a;
+      --prazo-futuro-texto: #bfdbfe;
+      --prazo-hoje-fundo: #78350f;
+      --prazo-hoje-texto: #fef3c7;
+      --prazo-atrasado-fundo: #7f1d1d;
+      --prazo-atrasado-texto: #fecaca;
     }
 
     * { box-sizing: border-box; }
@@ -83,6 +95,14 @@
       color: var(--texto);
     }
     .formulario input::placeholder { color: var(--suave); }
+    .formulario label[for="dataLimite"] {
+      flex: 1 1 100%;
+      color: var(--suave);
+      font-size: 13px;
+      margin-top: 3px;
+    }
+    .formulario input[type="date"] { flex: 1 1 165px; min-width: 0; }
+    .formulario button[type="submit"] { flex: 1 1 120px; }
     select {
       padding: 11px 9px;
       border: 1px solid var(--borda);
@@ -136,6 +156,20 @@
     #lista label { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
     #lista input[type="checkbox"] { width: 21px; height: 21px; accent-color: #2563eb; flex-shrink: 0; }
     .concluida { color: var(--suave); text-decoration: line-through; }
+    .item-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .item-info label { flex: initial !important; }
+    .etiquetas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .prazo-etiqueta { border-radius: 99px; font-size: 11px; padding: 5px 7px; }
+    .prazo-etiqueta.futuro, .prazo-etiqueta.normal {
+      background: var(--prazo-futuro-fundo); color: var(--prazo-futuro-texto);
+    }
+    .prazo-etiqueta.hoje {
+      background: var(--prazo-hoje-fundo); color: var(--prazo-hoje-texto);
+    }
+    .prazo-etiqueta.atrasada {
+      background: var(--prazo-atrasado-fundo); color: var(--prazo-atrasado-texto);
+    }
+    #resumoPrazos { color: var(--contador); font-size: 13px; margin: 10px 0 0; }
     .prioridade { flex-shrink: 0; border-radius: 99px; font-size: 11px; background: var(--etiqueta-fundo); color: var(--etiqueta-texto); padding: 5px 7px; }
     .excluir { background: #dc3545; flex-shrink: 0; font-size: 13px; padding: 10px; }
     .excluir:hover { background: #b91c1c; }
@@ -163,7 +197,7 @@
       <h1>📝 Minhas Tarefas</h1>
       <button id="alternarTema" class="botao-tema" type="button" aria-pressed="false">🌙 Modo escuro</button>
     </div>
-    <p class="subtitulo">Organize seu dia — versão 3!</p>
+    <p class="subtitulo">Organize seu dia — versão 4, com prazos!</p>
 
     <form id="formulario" class="formulario">
       <input id="novaTarefa" type="text" maxlength="100" placeholder="Digite uma tarefa..." aria-label="Nova tarefa" required>
@@ -171,6 +205,8 @@
         <option value="normal">Normal</option>
         <option value="alta">Alta prioridade</option>
       </select>
+      <label for="dataLimite">Prazo (opcional)</label>
+      <input id="dataLimite" type="date" aria-label="Data limite da tarefa">
       <button type="submit">Adicionar</button>
     </form>
 
@@ -182,12 +218,14 @@
       <div id="barra" class="barra" role="progressbar" aria-label="Tarefas concluídas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <div id="progresso"></div>
       </div>
+      <p id="resumoPrazos">Nenhuma tarefa atrasada.</p>
     </section>
 
     <div class="filtros" role="group" aria-label="Filtrar tarefas">
       <button class="filtro ativo" type="button" data-filtro="todas" aria-pressed="true">Todas</button>
       <button class="filtro" type="button" data-filtro="pendentes" aria-pressed="false">Pendentes</button>
       <button class="filtro" type="button" data-filtro="concluidas" aria-pressed="false">Concluídas</button>
+      <button class="filtro" type="button" data-filtro="atrasadas" aria-pressed="false">Atrasadas</button>
     </div>
 
     <ul id="lista" aria-label="Lista de tarefas"></ul>
@@ -196,6 +234,39 @@
   </main>
 
   <script>
+    // Helpers de data: compare AAAA-MM-DD diretamente para evitar diferenças de fuso.
+    function dataLocalHoje() {
+      const agora = new Date();
+      const ano = String(agora.getFullYear()).padStart(4, "0");
+      const mes = String(agora.getMonth() + 1).padStart(2, "0");
+      const dia = String(agora.getDate()).padStart(2, "0");
+      return `${ano}-${mes}-${dia}`;
+    }
+
+    function dataValida(valor) {
+      if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+      const [ano, mes, dia] = valor.split("-").map(Number);
+      const data = new Date(0);
+      data.setFullYear(ano, mes - 1, dia);
+      return data.getFullYear() === ano &&
+        data.getMonth() + 1 === mes && data.getDate() === dia;
+    }
+
+    function formatarData(valor) {
+      const [ano, mes, dia] = valor.split("-");
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function obterSituacao(tarefa) {
+      if (!tarefa.dataLimite) return null;
+      const data = formatarData(tarefa.dataLimite);
+      if (tarefa.concluida) return { tipo: "normal", texto: "Prazo: " + data };
+      const hoje = dataLocalHoje();
+      if (tarefa.dataLimite < hoje) return { tipo: "atrasada", texto: "Atrasada: " + data };
+      if (tarefa.dataLimite === hoje) return { tipo: "hoje", texto: "Vence hoje: " + data };
+      return { tipo: "futuro", texto: "Até: " + data };
+    }
+
     // 1. Recupera suas tarefas anteriores, mantendo a mesma chave de armazenamento.
     let tarefas = [];
     try {
@@ -206,7 +277,8 @@
           .map(t => ({
             texto: t.texto,
             concluida: t.concluida === true,
-            prioridade: t.prioridade === "alta" ? "alta" : "normal"
+            prioridade: t.prioridade === "alta" ? "alta" : "normal",
+            dataLimite: dataValida(t.dataLimite) ? t.dataLimite : null
           }));
       }
     } catch (erro) {
@@ -242,6 +314,8 @@
     const formulario = document.getElementById("formulario");
     const campo = document.getElementById("novaTarefa");
     const prioridade = document.getElementById("prioridade");
+    const prazo = document.getElementById("dataLimite");
+    const resumoPrazos = document.getElementById("resumoPrazos");
     const lista = document.getElementById("lista");
     const contador = document.getElementById("contador");
     const progresso = document.getElementById("progresso");
@@ -257,10 +331,16 @@
       evento.preventDefault();
       const texto = campo.value.trim();
       if (!texto) return;
-      tarefas.push({ texto: texto, concluida: false, prioridade: prioridade.value });
+      const dataLimite = prazo.value || null;
+      if (dataLimite && !dataValida(dataLimite)) {
+        alert("Escolha uma data válida.");
+        return;
+      }
+      tarefas.push({ texto: texto, concluida: false, prioridade: prioridade.value, dataLimite });
       salvarTarefas();
       campo.value = "";
       prioridade.value = "normal";
+      prazo.value = "";
       mostrarTarefas();
       campo.focus();
     }
@@ -284,6 +364,9 @@
         .filter(({ tarefa }) => {
           if (filtroAtual === "pendentes") return !tarefa.concluida;
           if (filtroAtual === "concluidas") return tarefa.concluida;
+          if (filtroAtual === "atrasadas") {
+            return !tarefa.concluida && Boolean(tarefa.dataLimite) && tarefa.dataLimite < dataLocalHoje();
+          }
           return true;
         });
 
@@ -303,14 +386,28 @@
           mostrarTarefas();
         });
         rotulo.append(caixa, texto);
-        item.appendChild(rotulo);
+        const info = document.createElement("div");
+        info.className = "item-info";
+        info.appendChild(rotulo);
+        const etiquetas = document.createElement("div");
+        etiquetas.className = "etiquetas";
 
         if (tarefa.prioridade === "alta") {
           const etiqueta = document.createElement("span");
           etiqueta.className = "prioridade";
           etiqueta.textContent = "Alta";
-          item.appendChild(etiqueta);
+          etiquetas.appendChild(etiqueta);
         }
+
+        const situacao = obterSituacao(tarefa);
+        if (situacao) {
+          const badgePrazo = document.createElement("span");
+          badgePrazo.className = "prazo-etiqueta " + situacao.tipo;
+          badgePrazo.textContent = situacao.texto;
+          etiquetas.appendChild(badgePrazo);
+        }
+        if (etiquetas.childElementCount) info.appendChild(etiquetas);
+        item.appendChild(info);
 
         const excluir = document.createElement("button");
         excluir.type = "button";
@@ -330,13 +427,19 @@
       const feitas = tarefas.filter(tarefa => tarefa.concluida).length;
       const percentual = tarefas.length ? Math.round(feitas / tarefas.length * 100) : 0;
       contador.textContent = `${feitas} de ${tarefas.length} concluídas`;
+      const atrasadas = tarefas.filter(t => !t.concluida && t.dataLimite && t.dataLimite < dataLocalHoje()).length;
+      resumoPrazos.textContent = atrasadas
+        ? `${atrasadas} ${atrasadas === 1 ? "tarefa atrasada" : "tarefas atrasadas"}`
+        : "Nenhuma tarefa atrasada.";
       progresso.style.width = percentual + "%";
       barra.setAttribute("aria-valuenow", String(percentual));
       vazio.hidden = visiveis.length > 0;
       if (visiveis.length === 0) {
         vazio.textContent = tarefas.length === 0
           ? "Nenhuma tarefa por enquanto."
-          : "Nenhuma tarefa nesse filtro.";
+          : filtroAtual === "atrasadas"
+            ? "Nenhuma tarefa atrasada. Ótimo!"
+            : "Nenhuma tarefa nesse filtro.";
       }
     }
 
@@ -346,7 +449,7 @@
     });
     mostrarTarefas();
 
-    // 4. Continua funcionando como aplicativo instalável/offline.
+    // 4. Continua funcionando como aplicativo instalável/offline na versão 4.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js")
