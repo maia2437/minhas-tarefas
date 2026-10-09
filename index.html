@@ -4,13 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Tarefas">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="icon" type="image/png" href="./icon-192.png">
-  <title>Minhas Tarefas</title>
+  <title>Minhas Tarefas — Versão 2</title>
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
@@ -18,160 +15,254 @@
       margin: 0;
       min-height: 100vh;
       background: #eff6ff;
-      font-family: Arial, Helvetica, sans-serif;
       color: #1e293b;
-      padding: max(25px, env(safe-area-inset-top)) 16px max(30px, env(safe-area-inset-bottom));
+      font-family: Arial, Helvetica, sans-serif;
+      padding: max(24px, env(safe-area-inset-top)) 14px max(28px, env(safe-area-inset-bottom));
     }
     .aplicativo {
-      background: white;
-      max-width: 510px;
+      max-width: 540px;
       margin: 0 auto;
-      padding: 26px;
+      background: #fff;
+      padding: 24px;
       border-radius: 18px;
-      box-shadow: 0 8px 30px #1e3a8a14;
+      box-shadow: 0 8px 28px #1e3a8a14;
     }
-    h1, .subtitulo { text-align: center; }
-    h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2rem); }
-    .subtitulo { color: #64748b; margin: 10px 0 24px; }
-    .formulario { display: flex; gap: 8px; }
-    #novaTarefa {
-      flex: 1;
-      width: 100%;
+    h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2rem); text-align: center; }
+    .subtitulo { color: #64748b; text-align: center; margin: 10px 0 24px; }
+    .formulario { display: flex; gap: 8px; flex-wrap: wrap; }
+    .formulario input {
+      flex: 1 1 190px;
       min-width: 0;
-      padding: 13px;
-      font-size: 16px;
+      padding: 12px;
       border: 1px solid #cbd5e1;
       border-radius: 10px;
+      font-size: 16px;
+    }
+    select {
+      padding: 11px 9px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #fff;
+      color: #1e293b;
+      font-size: 15px;
     }
     button {
-      background: #2563eb;
-      color: white;
       border: none;
       border-radius: 10px;
-      padding: 12px 14px;
       min-height: 44px;
+      padding: 10px 14px;
+      background: #2563eb;
+      color: #fff;
       font-size: 15px;
       cursor: pointer;
     }
     button:hover { background: #1d4ed8; }
-    button:focus-visible, input:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
-    #contador { color: #64748b; font-size: 14px; margin: 20px 0 10px; }
-    #lista { list-style: none; padding: 0; margin: 0; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
+    .painel { margin: 24px 0 14px; }
+    .linha-contador { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    #contador { color: #475569; font-size: 14px; }
+    .barra { margin-top: 10px; height: 10px; overflow: hidden; border-radius: 99px; background: #e2e8f0; }
+    #progresso { width: 0%; height: 100%; background: #16a34a; border-radius: 99px; transition: width .2s ease; }
+    .filtros { display: flex; gap: 6px; margin: 20px 0 12px; }
+    .filtro { flex: 1; background: #e2e8f0; color: #334155; padding: 10px 5px; font-size: 13px; }
+    .filtro:hover { background: #cbd5e1; }
+    .filtro.ativo { background: #2563eb; color: #fff; }
+    #lista { list-style: none; margin: 0; padding: 0; }
     #lista li {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 10px;
+      gap: 9px;
+      padding: 11px;
+      margin: 8px 0;
+      border-radius: 11px;
       background: #f1f5f9;
-      padding: 10px;
-      border-radius: 10px;
-      margin-top: 9px;
     }
-    #lista label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
-    #lista input[type="checkbox"] { width: 21px; height: 21px; flex-shrink: 0; accent-color: #2563eb; }
+    #lista label { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+    #lista input[type="checkbox"] { width: 21px; height: 21px; accent-color: #2563eb; flex-shrink: 0; }
     .concluida { color: #64748b; text-decoration: line-through; }
-    .excluir { background: #dc3545; flex-shrink: 0; }
+    .prioridade { flex-shrink: 0; border-radius: 99px; font-size: 11px; background: #fee2e2; color: #991b1b; padding: 5px 7px; }
+    .excluir { background: #dc3545; flex-shrink: 0; font-size: 13px; padding: 10px; }
     .excluir:hover { background: #b91c1c; }
-    #vazio { color: #94a3b8; font-size: 14px; text-align: center; padding: 15px 0; }
-    .rodape { margin: 18px 0 0; font-size: 12px; text-align: center; color: #94a3b8; }
-    @media (max-width: 380px) {
+    #vazio { color: #64748b; text-align: center; padding: 24px 5px; font-size: 14px; }
+    .rodape { color: #94a3b8; font-size: 12px; text-align: center; margin-top: 18px; }
+    @media (max-width: 390px) {
       .aplicativo { padding: 18px 14px; }
-      .formulario { flex-direction: column; }
-      .formulario button { width: 100%; }
+      .formulario button { flex: 1 1 100%; }
+      .filtros { gap: 4px; }
+      .filtro { font-size: 12px; }
+      #lista li { gap: 6px; }
     }
   </style>
 </head>
 <body>
   <main class="aplicativo">
     <h1>📝 Minhas Tarefas</h1>
-    <p class="subtitulo">Organize seu dia!</p>
-    <div class="formulario">
-      <input type="text" id="novaTarefa" placeholder="Digite uma tarefa..." maxlength="100" aria-label="Nova tarefa">
-      <button id="adicionar" type="button">Adicionar</button>
+    <p class="subtitulo">Organize seu dia — versão 2!</p>
+
+    <form id="formulario" class="formulario">
+      <input id="novaTarefa" type="text" maxlength="100" placeholder="Digite uma tarefa..." aria-label="Nova tarefa" required>
+      <select id="prioridade" aria-label="Prioridade da tarefa">
+        <option value="normal">Normal</option>
+        <option value="alta">Alta prioridade</option>
+      </select>
+      <button type="submit">Adicionar</button>
+    </form>
+
+    <section class="painel" aria-label="Progresso">
+      <div class="linha-contador">
+        <strong>Seu progresso</strong>
+        <span id="contador">0 de 0 concluídas</span>
+      </div>
+      <div id="barra" class="barra" role="progressbar" aria-label="Tarefas concluídas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="progresso"></div>
+      </div>
+    </section>
+
+    <div class="filtros" role="group" aria-label="Filtrar tarefas">
+      <button class="filtro ativo" type="button" data-filtro="todas" aria-pressed="true">Todas</button>
+      <button class="filtro" type="button" data-filtro="pendentes" aria-pressed="false">Pendentes</button>
+      <button class="filtro" type="button" data-filtro="concluidas" aria-pressed="false">Concluídas</button>
     </div>
-    <p id="contador">0 de 0 concluídas</p>
-    <ul id="lista"></ul>
+
+    <ul id="lista" aria-label="Lista de tarefas"></ul>
     <p id="vazio">Nenhuma tarefa por enquanto.</p>
-    <p class="rodape">As tarefas são salvas neste dispositivo.</p>
+    <p class="rodape">As tarefas são salvas somente neste dispositivo.</p>
   </main>
 
   <script>
-    // Lê tarefas salvas ou cria uma lista vazia na primeira visita.
-    let tarefas = JSON.parse(localStorage.getItem("minhasTarefas") || "[]");
+    // 1. Recupera suas tarefas anteriores, mantendo a mesma chave de armazenamento.
+    let tarefas = [];
+    try {
+      const salvas = JSON.parse(localStorage.getItem("minhasTarefas") || "[]");
+      if (Array.isArray(salvas)) {
+        tarefas = salvas
+          .filter(t => t && typeof t.texto === "string")
+          .map(t => ({
+            texto: t.texto,
+            concluida: t.concluida === true,
+            prioridade: t.prioridade === "alta" ? "alta" : "normal"
+          }));
+      }
+    } catch (erro) {
+      console.warn("Não foi possível ler tarefas salvas.", erro);
+    }
 
+    let filtroAtual = "todas";
+    const formulario = document.getElementById("formulario");
     const campo = document.getElementById("novaTarefa");
-    const botao = document.getElementById("adicionar");
+    const prioridade = document.getElementById("prioridade");
     const lista = document.getElementById("lista");
     const contador = document.getElementById("contador");
+    const progresso = document.getElementById("progresso");
+    const barra = document.getElementById("barra");
     const vazio = document.getElementById("vazio");
+    const botoesFiltro = document.querySelectorAll(".filtro");
 
     function salvarTarefas() {
       localStorage.setItem("minhasTarefas", JSON.stringify(tarefas));
     }
 
-    function adicionarTarefa() {
+    function adicionarTarefa(evento) {
+      evento.preventDefault();
       const texto = campo.value.trim();
-      if (texto === "") {
-        alert("Digite uma tarefa!");
-        return;
-      }
-      tarefas.push({ texto: texto, concluida: false });
-      campo.value = "";
+      if (!texto) return;
+      tarefas.push({ texto: texto, concluida: false, prioridade: prioridade.value });
       salvarTarefas();
+      campo.value = "";
+      prioridade.value = "normal";
       mostrarTarefas();
       campo.focus();
     }
 
+    function mudarFiltro(novoFiltro) {
+      filtroAtual = novoFiltro;
+      botoesFiltro.forEach(botao => {
+        const ativo = botao.dataset.filtro === filtroAtual;
+        botao.classList.toggle("ativo", ativo);
+        botao.setAttribute("aria-pressed", String(ativo));
+      });
+      mostrarTarefas();
+    }
+
     function mostrarTarefas() {
       lista.replaceChildren();
-      tarefas.forEach(function(tarefa, indice) {
+
+      // 2. Filtra apenas o que queremos ver, sem apagar os demais itens.
+      const visiveis = tarefas
+        .map((tarefa, indice) => ({ tarefa, indice }))
+        .filter(({ tarefa }) => {
+          if (filtroAtual === "pendentes") return !tarefa.concluida;
+          if (filtroAtual === "concluidas") return tarefa.concluida;
+          return true;
+        });
+
+      visiveis.forEach(({ tarefa, indice }) => {
         const item = document.createElement("li");
         const rotulo = document.createElement("label");
         const caixa = document.createElement("input");
         const texto = document.createElement("span");
+
         caixa.type = "checkbox";
         caixa.checked = tarefa.concluida;
-        texto.textContent = tarefa.texto;
+        texto.textContent = tarefa.texto; // Texto seguro: não interpreta HTML digitado.
         if (tarefa.concluida) texto.classList.add("concluida");
-
-        caixa.addEventListener("change", function() {
+        caixa.addEventListener("change", () => {
           tarefa.concluida = caixa.checked;
           salvarTarefas();
           mostrarTarefas();
         });
         rotulo.append(caixa, texto);
+        item.appendChild(rotulo);
+
+        if (tarefa.prioridade === "alta") {
+          const etiqueta = document.createElement("span");
+          etiqueta.className = "prioridade";
+          etiqueta.textContent = "Alta";
+          item.appendChild(etiqueta);
+        }
 
         const excluir = document.createElement("button");
-        excluir.textContent = "Excluir";
-        excluir.className = "excluir";
         excluir.type = "button";
+        excluir.className = "excluir";
+        excluir.textContent = "Excluir";
         excluir.setAttribute("aria-label", "Excluir " + tarefa.texto);
-        excluir.addEventListener("click", function() {
+        excluir.addEventListener("click", () => {
           tarefas.splice(indice, 1);
           salvarTarefas();
           mostrarTarefas();
         });
-        item.append(rotulo, excluir);
+        item.appendChild(excluir);
         lista.appendChild(item);
       });
 
-      const prontas = tarefas.filter(function(tarefa) {
-        return tarefa.concluida;
-      }).length;
-      contador.textContent = prontas + " de " + tarefas.length + " concluídas";
-      vazio.hidden = tarefas.length !== 0;
+      // 3. Atualiza o contador e a barra de progresso.
+      const feitas = tarefas.filter(tarefa => tarefa.concluida).length;
+      const percentual = tarefas.length ? Math.round(feitas / tarefas.length * 100) : 0;
+      contador.textContent = `${feitas} de ${tarefas.length} concluídas`;
+      progresso.style.width = percentual + "%";
+      barra.setAttribute("aria-valuenow", String(percentual));
+      vazio.hidden = visiveis.length > 0;
+      if (visiveis.length === 0) {
+        vazio.textContent = tarefas.length === 0
+          ? "Nenhuma tarefa por enquanto."
+          : "Nenhuma tarefa nesse filtro.";
+      }
     }
 
-    botao.addEventListener("click", adicionarTarefa);
-    campo.addEventListener("keydown", function(evento) {
-      if (evento.key === "Enter") adicionarTarefa();
+    formulario.addEventListener("submit", adicionarTarefa);
+    botoesFiltro.forEach(botao => {
+      botao.addEventListener("click", () => mudarFiltro(botao.dataset.filtro));
     });
     mostrarTarefas();
 
+    // 4. Continua funcionando como aplicativo instalável/offline.
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function() {
+      window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js")
-          .catch(function(erro) { console.error("Falha ao registrar o modo offline:", erro); });
+          .catch(erro => console.error("Falha ao registrar modo offline:", erro));
       });
     }
   </script>
