@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Tarefas">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <title>Minhas Tarefas</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #eff6ff;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1e293b;
+      padding: max(25px, env(safe-area-inset-top)) 16px max(30px, env(safe-area-inset-bottom));
+    }
+    .aplicativo {
+      background: white;
+      max-width: 510px;
+      margin: 0 auto;
+      padding: 26px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px #1e3a8a14;
+    }
+    h1, .subtitulo { text-align: center; }
+    h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2rem); }
+    .subtitulo { color: #64748b; margin: 10px 0 24px; }
+    .formulario { display: flex; gap: 8px; }
+    #novaTarefa {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      padding: 13px;
+      font-size: 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 14px;
+      min-height: 44px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+    #contador { color: #64748b; font-size: 14px; margin: 20px 0 10px; }
+    #lista { list-style: none; padding: 0; margin: 0; }
+    #lista li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: #f1f5f9;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 9px;
+    }
+    #lista label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    #lista input[type="checkbox"] { width: 21px; height: 21px; flex-shrink: 0; accent-color: #2563eb; }
+    .concluida { color: #64748b; text-decoration: line-through; }
+    .excluir { background: #dc3545; flex-shrink: 0; }
+    .excluir:hover { background: #b91c1c; }
+    #vazio { color: #94a3b8; font-size: 14px; text-align: center; padding: 15px 0; }
+    .rodape { margin: 18px 0 0; font-size: 12px; text-align: center; color: #94a3b8; }
+    @media (max-width: 380px) {
+      .aplicativo { padding: 18px 14px; }
+      .formulario { flex-direction: column; }
+      .formulario button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="aplicativo">
+    <h1>📝 Minhas Tarefas</h1>
+    <p class="subtitulo">Organize seu dia!</p>
+    <div class="formulario">
+      <input type="text" id="novaTarefa" placeholder="Digite uma tarefa..." maxlength="100" aria-label="Nova tarefa">
+      <button id="adicionar" type="button">Adicionar</button>
+    </div>
+    <p id="contador">0 de 0 concluídas</p>
+    <ul id="lista"></ul>
+    <p id="vazio">Nenhuma tarefa por enquanto.</p>
+    <p class="rodape">As tarefas são salvas neste dispositivo.</p>
+  </main>
+
+  <script>
+    // Lê tarefas salvas ou cria uma lista vazia na primeira visita.
+    let tarefas = JSON.parse(localStorage.getItem("minhasTarefas") || "[]");
+
+    const campo = document.getElementById("novaTarefa");
+    const botao = document.getElementById("adicionar");
+    const lista = document.getElementById("lista");
+    const contador = document.getElementById("contador");
+    const vazio = document.getElementById("vazio");
+
+    function salvarTarefas() {
+      localStorage.setItem("minhasTarefas", JSON.stringify(tarefas));
+    }
+
+    function adicionarTarefa() {
+      const texto = campo.value.trim();
+      if (texto === "") {
+        alert("Digite uma tarefa!");
+        return;
+      }
+      tarefas.push({ texto: texto, concluida: false });
+      campo.value = "";
+      salvarTarefas();
+      mostrarTarefas();
+      campo.focus();
+    }
+
+    function mostrarTarefas() {
+      lista.replaceChildren();
+      tarefas.forEach(function(tarefa, indice) {
+        const item = document.createElement("li");
+        const rotulo = document.createElement("label");
+        const caixa = document.createElement("input");
+        const texto = document.createElement("span");
+        caixa.type = "checkbox";
+        caixa.checked = tarefa.concluida;
+        texto.textContent = tarefa.texto;
+        if (tarefa.concluida) texto.classList.add("concluida");
+
+        caixa.addEventListener("change", function() {
+          tarefa.concluida = caixa.checked;
+          salvarTarefas();
+          mostrarTarefas();
+        });
+        rotulo.append(caixa, texto);
+
+        const excluir = document.createElement("button");
+        excluir.textContent = "Excluir";
+        excluir.className = "excluir";
+        excluir.type = "button";
+        excluir.setAttribute("aria-label", "Excluir " + tarefa.texto);
+        excluir.addEventListener("click", function() {
+          tarefas.splice(indice, 1);
+          salvarTarefas();
+          mostrarTarefas();
+        });
+        item.append(rotulo, excluir);
+        lista.appendChild(item);
+      });
+
+      const prontas = tarefas.filter(function(tarefa) {
+        return tarefa.concluida;
+      }).length;
+      contador.textContent = prontas + " de " + tarefas.length + " concluídas";
+      vazio.hidden = tarefas.length !== 0;
+    }
+
+    botao.addEventListener("click", adicionarTarefa);
+    campo.addEventListener("keydown", function(evento) {
+      if (evento.key === "Enter") adicionarTarefa();
+    });
+    mostrarTarefas();
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("./sw.js")
+          .catch(function(erro) { console.error("Falha ao registrar o modo offline:", erro); });
+      });
+    }
+  </script>
+</body>
+</html>

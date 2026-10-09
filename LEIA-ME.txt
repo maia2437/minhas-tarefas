@@ -1,0 +1,35 @@
+# Minha primeira PWA — Minhas Tarefas
+
+Projeto da aula de programação: site que funciona como aplicativo instalável em celulares Android e iPhone.
+
+## Arquivos
+- `index.html`: aparência, HTML e JavaScript para adicionar, concluir e excluir tarefas.
+- `manifest.webmanifest`: nome, identidade, ícones e modo de abertura do app.
+- `sw.js`: arquivos armazenados para uso offline após o primeiro acesso com internet.
+- `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`: ícones do aplicativo.
+
+## 1. Experimente no computador
+Abra o `index.html` com o navegador para experimentar a lista de tarefas. Para testar a instalação e o modo offline, publique em HTTPS ou rode em `localhost`; abrir como `file://` não registra o service worker.
+
+## 2. Publique com GitHub Pages
+1. Crie uma conta gratuita em https://github.com/ se ainda não tiver.
+2. Crie um repositório **público** chamado `minhas-tarefas` (sem dados pessoais nos arquivos).
+3. Entre no repositório, selecione **Add file > Upload files** e envie todos os arquivos desta pasta **separadamente, na raiz**. Clique em **Commit changes**.
+4. Em **Settings > Pages > Build and deployment**, escolha **Deploy from a branch**, a branch **main** e pasta **/(root)**. Salve.
+5. Acesse o endereço que o GitHub Pages indicar (formato comum: `https://SEU-USUARIO.github.io/minhas-tarefas/`).
+
+## 3. Instale no celular
+- Android com Chrome: abra o endereço, menu (três pontos) > **Instalar app** ou **Adicionar à tela inicial**, conforme a opção disponível.
+- iPhone: abra o endereço no Safari, toque em **Compartilhar > Adicionar à Tela de Início** e confirme; a interface pode variar por versão.
+
+## 4. Testes
+- Adicione uma tarefa, marque como concluída, feche/reabra o aplicativo.
+- Desligue a internet depois da primeira visita completa e abra novamente; a página deve continuar funcionando com os recursos guardados pelo service worker.
+- O `localStorage` salva os dados **somente no mesmo navegador/perfil/dispositivo e origem**. Não sincroniza entre seu computador e celular. Limpar dados do navegador ou desinstalar pode apagá-los.
+
+## 5. Como atualizar o aplicativo
+Após alterações no `index.html`, faça commit dos arquivos de novo. Na próxima visita online o aplicativo busca a versão atual; em caso de dificuldade, aumente a versão de CACHE_NAME em `sw.js` (v1 para v2), republique e recarregue a página.
+
+Links de referência:
+- https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable
+- https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
